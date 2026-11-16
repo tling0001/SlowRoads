@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>SlowRoads: Endless Driving</title>
-<!-- v5.0: Tesla-style centre display -->
+<!-- v6.7: autopilot rewritten (lane-centre pure pursuit with speed-independent steering, smooth, braking ahead of bends); the autopilot icon on the screen turns with the steering wheel. v6.6: the top-screen 3D view draws the real trees, pines, rocks and cacti (true shapes, sizes and rotation) instead of grey posts. v6.5: menus (shortcuts, vehicle, tuning, settings) open on the left side of the view. v6.4: frunk opens in the game, unified taskbar icons, headlight menu, drive seatbelt, max-speed icon, cleaner drive playback bar, reverse view, park drag fix -->
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%2064%2064%27%3E%0A%3Ccircle%20cx%3D%2732%27%20cy%3D%2732%27%20r%3D%2731%27%20fill%3D%27%23fff%27%20stroke%3D%27%23e2e0db%27%20stroke-width%3D%271%27/%3E%0A%3Cg%20fill%3D%27none%27%20stroke%3D%27%2316191b%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%0A%3Ccircle%20cx%3D%2732%27%20cy%3D%2732%27%20r%3D%2721%27%20stroke-width%3D%274.6%27/%3E%0A%3Ccircle%20cx%3D%2732%27%20cy%3D%2732%27%20r%3D%2717.6%27%20stroke-width%3D%27.7%27%20stroke%3D%27%23fff%27%20stroke-opacity%3D%27.45%27/%3E%0A%3Cpath%20d%3D%27M11.4%2030.5%20Q20%2036.5%2027.4%2035.6%20M52.6%2030.5%20Q44%2036.5%2036.6%2035.6%27%20stroke-width%3D%273.4%27/%3E%0A%3Cpath%20d%3D%27M32%2036%20V52.5%27%20stroke-width%3D%273.6%27/%3E%0A%3Cpath%20d%3D%27M32%2011%20V15.5%27%20stroke-width%3D%272.2%27%20stroke%3D%27%2316191b%27/%3E%0A%3C/g%3E%0A%3Cpath%20d%3D%27M30%2011.2h4v4.6h-4z%27%20fill%3D%27%23d9423a%27/%3E%0A%3Ccircle%20cx%3D%2732%27%20cy%3D%2732%27%20r%3D%276.2%27%20fill%3D%27%2316191b%27/%3E%0A%3Ccircle%20cx%3D%2732%27%20cy%3D%2732%27%20r%3D%273.6%27%20fill%3D%27none%27%20stroke%3D%27%23fff%27%20stroke-width%3D%27.9%27%20stroke-opacity%3D%27.7%27/%3E%0A%3Ccircle%20cx%3D%2732%27%20cy%3D%2732%27%20r%3D%271.2%27%20fill%3D%27%23fff%27/%3E%0A%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -167,7 +167,7 @@ kbd{border-color:rgba(95,242,255,.4);color:#e6fdff;box-shadow:0 0 6px rgba(95,24
 .prnd b.on{font-weight:700;color:var(--tx);opacity:1}
 #tesla.drive .prnd b.on{color:var(--acc)}
 .apI{width:22px;height:22px;color:var(--sub);opacity:.0;cursor:pointer;transition:color .25s,opacity .3s}
-.apI svg{width:22px;height:22px}
+.apI svg{width:22px;height:22px;transform-origin:50% 50%}
 .apI.on{color:var(--acc);opacity:1}.apI.tacc{color:var(--sub);opacity:1}
 #gearBox{display:flex;align-items:center;gap:5px;margin-left:2px}
 #gearL{font-style:normal;font-size:8.5px;letter-spacing:.14em;color:var(--sub);font-weight:600}
@@ -273,6 +273,12 @@ kbd{border-color:rgba(95,242,255,.4);color:#e6fdff;box-shadow:0 0 6px rgba(95,24
 .clim i{font-style:normal;font-size:15px;color:#8c8e96;cursor:pointer;padding:6px 4px;line-height:1}
 .clim i:hover{color:#fff}
 #volPop.show{opacity:1;pointer-events:auto;transform:none}
+#lightPop{position:absolute;left:50%;bottom:72px;z-index:8;display:flex;gap:6px;padding:8px 10px;border-radius:12px;background:rgba(36,37,41,.97);color:#e9e9ee;box-shadow:0 6px 22px rgba(0,0,0,.4);opacity:0;pointer-events:none;transform:translate(-50%,6px);transition:opacity .2s,transform .2s}
+#lightPop.show{opacity:1;pointer-events:auto;transform:translate(-50%,0)}
+#lightPop button{width:44px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#b9bcc4;transition:background .2s,color .2s}
+#lightPop button:hover{background:rgba(255,255,255,.12)}
+#lightPop button svg{width:28px;height:24px}
+#lightPop button.on{color:#27b26a}#lightPop #lpHigh.on{color:#5b8cff}
 #volPop svg{width:18px;height:18px;flex:none}
 #volRange{flex:1;accent-color:#fff;height:18px}
 /* ---- panels opened from the screen (Tesla look) ---- */
@@ -305,7 +311,7 @@ kbd{font-family:inherit;border-color:rgba(255,255,255,.22);background:linear-gra
 #lightStack{position:absolute;left:14px;top:88px;display:flex;flex-direction:column;gap:12px;z-index:4}
 #cardMedia{left:16px;top:588px;width:428px;height:92px;z-index:4}
 #spdBlk{position:absolute;left:18px;top:76px;z-index:3}
-#setBox{position:absolute;left:324px;top:80px;z-index:3}
+#setBox{position:absolute;right:18px;top:80px;z-index:3}
 #tesla.park #chips{left:230px;top:84px;transform:translateX(-50%);justify-content:center;width:360px}
 #tesla.drive #chips{left:18px;top:184px;transform:none;justify-content:flex-start;width:300px}
 #tesla .gauge{position:absolute;width:128px;height:128px;overflow:visible;z-index:3;top:268px}
@@ -325,16 +331,19 @@ kbd{font-family:inherit;border-color:rgba(255,255,255,.22);background:linear-gra
 .mStrip button{width:30px;height:30px;flex:none}
 .mStrip .sep{width:1px;height:22px;background:var(--ln);margin:0 6px;flex:none}
 .mStrip .gap{flex:1}
+#tesla #beltDr{position:absolute;left:10px;bottom:64px;z-index:3;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--card);box-shadow:0 1px 4px rgba(0,0,0,.18);color:#e82127}
+#tesla #beltDr.on{color:var(--sub)}
+#tesla #beltDr svg{width:22px;height:20px}
 #tsTask{position:absolute;left:0;bottom:0;width:460px;height:64px;z-index:6;display:flex;align-items:center;justify-content:space-between;padding:0 8px;color:#e9e9ee;background:linear-gradient(180deg,#17181a,#0c0c0e);border-top:1px solid #2b2c30}
 #tsTask .grp{display:flex;align-items:center;gap:2px}
 .tb{position:relative;width:36px;height:40px;display:flex;align-items:center;justify-content:center;border-radius:10px;color:#e9e9ee;cursor:pointer;transition:background .2s,color .2s}
 .tb>svg{width:23px;height:23px}
-.tile{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;color:#fff}
-.tile svg{width:18px;height:18px}
+.tile{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;color:inherit;background:none!important}
+.tile svg{width:23px;height:23px}
 .clim{display:flex;align-items:center;gap:4px;font-size:17px;font-weight:400;color:#ececf0;min-width:62px;justify-content:center;font-variant-numeric:tabular-nums}
 #volPop{position:absolute;right:10px;bottom:72px;z-index:8;width:200px;padding:12px 14px;border-radius:12px;background:rgba(36,37,41,.97);color:#fff;display:flex;align-items:center;gap:10px;box-shadow:0 6px 22px rgba(0,0,0,.4);opacity:0;pointer-events:none;transform:translateY(6px);transition:opacity .2s,transform .2s}
-#kbPanel,#carPanel,#tunePanel{left:auto;right:calc(var(--tsw) + 28px);bottom:14px;max-height:calc(100vh - 28px);transform-origin:bottom right}
-#panel{right:calc(var(--tsw) + 28px);left:auto;top:68px;max-height:calc(100vh - 90px)}
+#kbPanel,#carPanel,#tunePanel{left:22px;right:auto;bottom:14px;max-height:calc(100vh - 28px);transform-origin:bottom left}
+#panel{left:22px;right:auto;top:68px;max-height:calc(100vh - 90px)}
 
 /* ---- v5.0 two separate screens: top = visualisation, bottom = map + menus ---- */
 #tsScreen2{height:460px}
@@ -390,7 +399,7 @@ kbd{font-family:inherit;border-color:rgba(255,255,255,.22);background:linear-gra
   <div id="spdBlk" class="dr"><div id="spd">0</div><div id="unit" data-act="unit" title="Tap to switch km/h ⇄ mph">KM/H</div><div id="thr"><div id="thrF"></div></div></div>
   <div id="setBox" class="dr"><div id="chips2">
     <span id="chipCruise"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.64 17.25A8.5 8.5 0 1 1 19.36 17.25"/><path d="M12 13l4.6-4.6"/><circle cx="12" cy="13" r="1.1" fill="currentColor"/></svg><b id="cruiseNum">100</b><small>CRUISE</small></span>
-    <span id="chipMax"><b id="maxNum">100</b><small>MAX</small></span></div></div>
+    <span id="chipMax"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.64 17.25A8.5 8.5 0 1 1 19.36 17.25"/><path d="M12 13l5.2-2.6"/><path d="M19.6 7.2 17.4 9"/><circle cx="12" cy="13" r="1.1" fill="currentColor"/></svg><b id="maxNum">100</b><small>MAX</small></span></div></div>
   <div id="chips">
     <span id="chipAuto" data-act="ap" title="Autopilot (F)">AUTO</span><span id="chipBoost" data-act="boost" title="Sport boost (Shift)">SPORT</span><span id="chipCam" data-act="cam" title="Camera view (C)">CHASE</span><span id="chipTime">15:30</span><span id="chipPwr">GAS</span><span id="regen" class="hidden" title="Power / regeneration"><i id="rgReg"></i><i id="rgPwr"></i><u></u><b id="rgThumb"></b></span>
   </div>
@@ -408,7 +417,8 @@ kbd{font-family:inherit;border-color:rgba(255,255,255,.22);background:linear-gra
       <div class="nLbl">Endless road</div>
       <div class="nBtns"><button class="nAp" id="navAp" data-act="ap" title="Autopilot (F)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9.2"/><path d="M3 11.2c3.4.9 5.8 1.9 7 3.1M21 11.2c-3.4.9-5.8 1.9-7 3.1M12 14.6V21"/><circle cx="12" cy="12" r="1.7" fill="currentColor" stroke="none"/></svg></button><button class="nCancel" data-act="cancel" title="Turn off autopilot &amp; cruise">Cancel</button><button class="nMore" data-act="menu" title="Settings (Esc)"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button></div>
     </div>
-    <div id="mapPill" class="dr"><b>SR-1 N</b><span id="mapRoad">European Hills</span></div>
+    <div id="mapPill" class="dr"><b>Slow Road</b><span id="mapRoad">European Hills</span></div>
+    <button id="beltDr" class="dr" data-act="belt" title="Seatbelt (click to fasten / release)"><svg viewBox="0 0 28 24" fill="currentColor"><circle cx="14" cy="5" r="2.6"/><path d="M11 9.5 8 20l3 .8 1.2-5.2h3.6L17 20.8l3-.8-3-10.5-2 5-.1 0zM8.5 8.5l11 9" fill="none" stroke="currentColor" stroke-width="1.8"/></svg></button>
     <div class="mStrip dr">
       <div class="mArt"></div>
       <div class="mTxt"><b class="mTitle">Slow Roads</b><span class="mSub">Car · Gas</span><span class="mSrc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 11a8 8 0 0 1 8 8M4 5a14 14 0 0 1 14 14"/><circle cx="5" cy="19" r="1.5" fill="currentColor"/></svg><em class="mScene" style="font-style:normal">Hills</em></span></div>
@@ -419,9 +429,7 @@ kbd{font-family:inherit;border-color:rgba(255,255,255,.22);background:linear-gra
       <button class="mPlay" data-act="mute" title="Sound on / mute (M)"></button>
       <button data-act="next" title="Next biome"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 5l9 7-9 7zM17 5h2.4v14H17z"/></svg></button>
       <div class="sep"></div>
-      <button class="dim" data-act="queue" title="Keyboard shortcuts (K)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M3 6h14M3 12h14M3 18h8M18 15v6M15 18h6"/></svg></button>
-      <button class="dim" data-act="search" title="Settings (Esc)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></svg></button>
-      <button class="dim" data-act="eq" title="Engine tuning (T)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M6 3v18M12 3v18M18 3v18"/><circle cx="6" cy="14" r="2" fill="var(--card)"/><circle cx="12" cy="8" r="2" fill="var(--card)"/><circle cx="18" cy="16" r="2" fill="var(--card)"/></svg></button>
+      <button class="dim" data-act="search" title="Environment &amp; settings (Esc)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 19.5 9 8.5l4 6.5 2.5-3.5 6 8z"/><path d="M7.4 11.4 9 13l1.6-1.2"/></svg></button>
     </div>
   </div>
 
@@ -437,6 +445,11 @@ kbd{font-family:inherit;border-color:rgba(255,255,255,.22);background:linear-gra
       <button class="dim" data-act="search" title="Settings (Esc)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></svg></button>
     </div>
   </div>
+  <div id="lightPop">
+    <button id="lpLow" data-act="lights" title="Headlights (L)"><svg viewBox="0 0 28 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 4h3a8 8 0 0 1 0 16h-3z" fill="currentColor" stroke="none"/><path d="M2 6l9 2.5M2 11l9 2.5M2 16l9 2.5"/></svg></button>
+    <button id="lpAuto" data-act="autolights" title="Auto headlights"><svg viewBox="0 0 28 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 6h8M2 11h8M2 16h8"/><circle cx="18" cy="11" r="7"/><path d="M15.5 14.5 18 7.5l2.5 7M16.4 12.5h3.2"/></svg></button>
+    <button id="lpHigh" data-act="highbeam" title="High beams"><svg viewBox="0 0 28 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 4h3a8 8 0 0 1 0 16h-3z" fill="currentColor" stroke="none"/><path d="M2 6h9M2 12h9M2 18h9"/></svg></button>
+  </div>
   <div id="volPop"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 9v6h4l5 4V5L8 9z"/></svg><input type="range" id="volRange" min="0" max="1" step="0.01" value="0.6"></div>
 
   <!-- taskbar -->
@@ -446,8 +459,7 @@ kbd{font-family:inherit;border-color:rgba(255,255,255,.22);background:linear-gra
       <div class="clim"><i data-act="clim" data-s="l" data-d="-1">‹</i><span id="climL">72</span><i data-act="clim" data-s="l" data-d="1">›</i></div>
     </div>
     <div class="grp">
-      <div class="tb" id="tbCam" data-act="cam" title="Camera view (C)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#22232a"/><circle cx="12" cy="12" r="7" fill="none" stroke="#a45cf2" stroke-width="3"/><circle cx="12" cy="12" r="3" fill="#6b3fb8"/><circle cx="10.8" cy="10.8" r="1" fill="#fff"/></svg></div>
-      <div class="tb" id="lightBtn" title="Headlights (L)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="transform:scaleX(-1)"><path d="M10.5 6.5H9a5.5 5.5 0 0 0 0 11h1.5z"/><path d="M14 8h7M14 12h7M14 16h7"/></svg></div>
+      <div class="tb" id="lightBtn" data-act="lightmenu" title="Headlights (L)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="transform:scaleX(-1)"><path d="M10.5 6.5H9a5.5 5.5 0 0 0 0 11h1.5z"/><path d="M14 8h7M14 12h7M14 16h7"/></svg></div>
       <div class="tb" id="cruiseBtn" title="Cruise control (Q)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4.64 17.25A8.5 8.5 0 1 1 19.36 17.25"/><path d="M12 5.7V7M6.8 10l1.1.7M4.7 13H6"/><path d="M12 13l4.6-4.6M16.6 8.4h-3.3M16.6 8.4v3.3"/><circle cx="12" cy="13" r="1.1" fill="currentColor"/></svg></div>
       <div class="tb" id="engBtn" title="Tune car (T)"><div class="tile" style="background:#e8742c"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 9h9.5v8H7z"/><path d="M9.5 9V6.5h5V9"/><path d="M7 12H4.5M4.5 10v6"/><path d="M16.5 11H19l1.5 1.5V17"/><path d="M10 17v1.8M13.5 17v1.8"/></svg></div></div>
       <div class="tb" id="kbBtn" title="Keyboard shortcuts (K)"><div class="tile" style="background:#2c6bed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2.5"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/></svg></div></div>
@@ -911,8 +923,8 @@ function buildChunk(ci){
         addBox(D,x,y,z,0.3*sc,1.4*sc,0.3*sc,yaw,C(0x6b4a2f));
         addPyr(D,x,y+1.0*sc,z,3.2*sc,3.0*sc,yaw,g);
         addPyr(D,x,y+2.6*sc,z,2.4*sc,2.4*sc,yaw+0.4,g);
-        obs.push({x:x,z:z,r:1.0*sc});
-      }else{const bs=(2+rnd()*2)*sc;addPyr(D,x,y-0.2,z,bs,(1.2+rnd()*1.2)*sc,yaw,C(0x8a8d90));obs.push({x:x,z:z,r:bs*0.4});}
+        obs.push({x:x,z:z,r:1.0*sc,k:"tree",s:sc,yaw:yaw});
+      }else{const bs=(2+rnd()*2)*sc,rh=(1.2+rnd()*1.2)*sc;addPyr(D,x,y-0.2,z,bs,rh,yaw,C(0x8a8d90));obs.push({x:x,z:z,r:bs*0.4,k:"rock",b:bs,h:rh,yaw:yaw});}
     }else if(B.id==='snow'){
       if(kind<0.85){
         const g=C(0x2d5f4d).clone().offsetHSL(0,0,(rnd()-.5)*0.06);
@@ -921,8 +933,8 @@ function buildChunk(ci){
         addPyr(D,x,y+2.4*sc,z,2.4*sc,2.4*sc,yaw+0.3,g);
         addPyr(D,x,y+3.6*sc,z,1.6*sc,2.2*sc,yaw,g);
         addPyr(D,x,y+4.9*sc,z,0.7*sc,0.9*sc,yaw,C(0xffffff));
-        obs.push({x:x,z:z,r:1.0*sc});
-      }else{const bs=(2+rnd()*3)*sc;addPyr(D,x,y-0.2,z,bs,(1.4+rnd()*1.6)*sc,yaw,C(0x7b8796));obs.push({x:x,z:z,r:bs*0.4});}
+        obs.push({x:x,z:z,r:1.0*sc,k:"pine",s:sc,yaw:yaw});
+      }else{const bs=(2+rnd()*3)*sc,rh=(1.4+rnd()*1.6)*sc;addPyr(D,x,y-0.2,z,bs,rh,yaw,C(0x7b8796));obs.push({x:x,z:z,r:bs*0.4,k:"rock",b:bs,h:rh,yaw:yaw});}
     }else{
       if(kind<0.3){
         const g=C(0x5f8f4a);
@@ -931,8 +943,8 @@ function buildChunk(ci){
         addBox(D,x+0.85*sc,y+1.3*sc,z,0.35*sc,1.1*sc,0.35*sc,yaw,g);
         addBox(D,x-0.5*sc,y+1.9*sc,z,0.9*sc,0.35*sc,0.35*sc,yaw,g);
         addBox(D,x-0.85*sc,y+1.9*sc,z,0.35*sc,0.9*sc,0.35*sc,yaw,g);
-        obs.push({x:x,z:z,r:0.9*sc});
-      }else{const bs=(2+rnd()*4)*sc;addPyr(D,x,y-0.2,z,bs,(1+rnd()*2.2)*sc,yaw,C(rnd()<0.5?0xb5835a:0x9a6a48));obs.push({x:x,z:z,r:bs*0.4});}
+        obs.push({x:x,z:z,r:0.9*sc,k:"cactus",s:sc,yaw:yaw});
+      }else{const bs=(2+rnd()*4)*sc,rh=(1+rnd()*2.2)*sc;addPyr(D,x,y-0.2,z,bs,rh,yaw,C(rnd()<0.5?0xb5835a:0x9a6a48));obs.push({x:x,z:z,r:bs*0.4,k:"rock",b:bs,h:rh,yaw:yaw});}
     }
   }
   for(const side of [-1,1]){ // v3.2: world-edge walls
@@ -1377,7 +1389,7 @@ function buildMotoModel(){
    live from the road centre-line, lane lines, guard rails, obstacles and
    the blue / grey autopilot corridor.
    ===================================================================== */
-const VZ={ok:false,pk:1,tgt:1,yaw:0,pitch:0,idle:0,drag:false,of:0,ot:0,fT:0,tT:0,dark:false,CW:460,CH:400,k:1,
+const VZ={ok:false,pk:1,tgt:1,rvA:0,yaw:0,pitch:0,idle:0,drag:false,of:0,ot:0,fT:0,tT:0,dark:false,CW:460,CH:400,k:1,
   rect:{x:0,y:56,w:460,h:330},labels:null,apply(){},resize(){},update(){},setTheme(){}};
 (function buildViz(){
   try{
@@ -1433,10 +1445,23 @@ const VZ={ok:false,pk:1,tgt:1,yaw:0,pitch:0,idle:0,drag:false,of:0,ot:0,fT:0,tT:
     }
     function wall(R,i,j,d,h){at(A,j,d);at(B,j+1,d);C[0]=B[0];C[1]=B[1];D[0]=A[0];D[1]=A[1];quadAt(R,i,A,B,C,D,0,h);}
 
-    /* ---- obstacles (trees / rocks / cacti are drawn as grey posts) ---- */
-    const OBS=36,M_OBS=new THREE.MeshLambertMaterial({color:0xc4c5cc});
-    const obsG=new THREE.CylinderGeometry(1,1,2.4,10);
-    const obs=[];for(let i=0;i<OBS;i++){const m=new THREE.Mesh(obsG,M_OBS);m.visible=false;sc.add(m);obs.push(m);}
+    /* ---- obstacles: trees, pines, rocks and cacti are rebuilt with the same shapes, proportions and rotation as in the game world ---- */
+    const OBS=60,M_OBS=new THREE.MeshLambertMaterial({color:0xc4c5cc}),M_OBS2=new THREE.MeshLambertMaterial({color:0xa9aab3}),M_OBS3=new THREE.MeshLambertMaterial({color:0xf4f4f7});
+    const pyrGeo=new THREE.ConeGeometry(Math.SQRT1_2,1,4,1);pyrGeo.rotateY(Math.PI/4);pyrGeo.translate(0,0.5,0);   // unit square-based pyramid, base on y=0
+    const boxGeo=new THREE.BoxGeometry(1,1,1);boxGeo.translate(0,0.5,0);
+    function part(g,geo,mat,sx,sy,sz,x,y,z,ry){const m=new THREE.Mesh(geo,mat);m.scale.set(sx,sy,sz);m.position.set(x,y,z);if(ry)m.rotation.y=ry;g.add(m);return m;}
+    const pyr=(g,mat,b,h,y,ry)=>part(g,pyrGeo,mat,b,h,b,0,y,0,ry),bx=(g,mat,w,h,d,x,y,z)=>part(g,boxGeo,mat,w,h,d,x,y,z,0);
+    const OB={
+      tree:g=>{bx(g,M_OBS2,0.3,1.4,0.3,0,0,0);pyr(g,M_OBS,3.2,3.0,1.0,0);pyr(g,M_OBS,2.4,2.4,2.6,0.4);},
+      pine:g=>{bx(g,M_OBS2,0.3,1.2,0.3,0,0,0);pyr(g,M_OBS,3.2,2.6,1.0,0);pyr(g,M_OBS,2.4,2.4,2.4,0.3);pyr(g,M_OBS,1.6,2.2,3.6,0);pyr(g,M_OBS3,0.7,0.9,4.9,0);},
+      rock:g=>{pyr(g,M_OBS2,1,1,0,0);},
+      cactus:g=>[bx(g,M_OBS,0.55,3.2,0.55,0,0,0),bx(g,M_OBS,0.9,0.35,0.35,0.5,1.3,0),bx(g,M_OBS,0.35,1.1,0.35,0.85,1.3,0),
+                 bx(g,M_OBS,0.9,0.35,0.35,-0.5,1.9,0),bx(g,M_OBS,0.35,0.9,0.35,-0.85,1.9,0)]
+    };
+    const pool={};for(const k in OB)pool[k]={a:[],n:0};
+    function takeObs(kind){const P=pool[kind];let g=P.a[P.n];if(!g){g=new THREE.Group();g.userData.kids=OB[kind](g);sc.add(g);P.a.push(g);}P.n++;g.visible=true;return g;}
+    function endObs(){for(const k in pool){const P=pool[k];for(let i=P.n;i<P.a.length;i++)P.a[i].visible=false;P.n=0;}}
+    function hideObs(){for(const k in pool){const P=pool[k];for(let i=0;i<P.a.length;i++)P.a[i].visible=false;P.n=0;}}
 
     function updateRoad(){
       const c=Math.cos(car.h),s=Math.sin(car.h),i0=Math.max(0,car.idx-NB),cj=car.idx-i0;
@@ -1457,26 +1482,31 @@ const VZ={ok:false,pk:1,tgt:1,yaw:0,pitch:0,idle:0,drag:false,of:0,ot:0,fT:0,tT:
         else{NIL(rPathL,j);NIL(rPathR,j);}
       }
       for(const R of ribbons)R.g.attributes.position.needsUpdate=true;
-      // obstacles
+      // obstacles: real shapes (trees, pines, rocks, cacti) at their true size and rotation
       let k=0;const cc=Math.floor(car.idx/N);
       for(let ci=cc-1;ci<=cc+4&&k<OBS;ci++){
         const ch=chunks.get(ci);if(!ch)continue;
         for(const o of ch.obs){
+          if(!o.k)continue;
           const dx=o.x-car.x,dz=o.z-car.z,lx=dx*c-dz*s,lz=dx*s+dz*c;
-          if(lz<-14||lz>85||Math.abs(lx)>26)continue;
-          const m=obs[k++];m.visible=true;m.position.set(lx,1.1,lz);m.scale.set(Math.max(o.r,0.5)*0.8,1,Math.max(o.r,0.5)*0.8);
+          if(lz<-14||lz>85||Math.abs(lx)>30)continue;
+          const g=takeObs(o.k);k++;
+          g.position.set(lx,0,lz);
+          if(o.k==='rock'){g.position.y=-0.2;g.scale.set(o.b,o.h,o.b);g.rotation.y=o.yaw-car.h;}
+          else if(o.k==='cactus'){g.scale.setScalar(o.s);g.rotation.y=-car.h;for(const m of g.userData.kids)m.rotation.y=o.yaw;}   // arms keep world-axis offsets, like the game mesh
+          else{g.scale.setScalar(o.s);g.rotation.y=o.yaw-car.h;}
           if(k>=OBS)break;
         }
       }
-      for(;k<OBS;k++)obs[k].visible=false;
+      endObs();
     }
 
     /* ---- theme ---- */
     VZ.setTheme=function(dark){
       VZ.dark=dark;
-      const P=dark?{fog:0x1a1b1f,road:0x2c2d33,line:0x8a8c96,rail:0x474950,pg:0x666873,pb:0x4f7dff,obs:0x3b3d44,sh:.45}
-                  :{fog:0xeeeef2,road:0xdadbe1,line:0xffffff,rail:0xbfc0c8,pg:0xb2b4bd,pb:0x3e6ae1,obs:0xc4c5cc,sh:1};
-      fogC.set(P.fog);M_ROAD.color.set(P.road);M_LINE.color.set(P.line);M_RAIL.color.set(P.rail);M_OBS.color.set(P.obs);
+      const P=dark?{fog:0x1a1b1f,road:0x2c2d33,line:0x8a8c96,rail:0x474950,pg:0x666873,pb:0x4f7dff,obs:0x3b3d44,obs2:0x2d2f35,obs3:0x6b6d77,sh:.45}
+                  :{fog:0xeeeef2,road:0xdadbe1,line:0xffffff,rail:0xbfc0c8,pg:0xb2b4bd,pb:0x3e6ae1,obs:0xc4c5cc,obs2:0xa9aab3,obs3:0xf4f4f7,sh:1};
+      fogC.set(P.fog);M_ROAD.color.set(P.road);M_LINE.color.set(P.line);M_RAIL.color.set(P.rail);M_OBS.color.set(P.obs);M_OBS2.color.set(P.obs2);M_OBS3.color.set(P.obs3);
       VZ.pathGrey=P.pg;VZ.pathBlue=P.pb;shadow.material.opacity=P.sh;
     };
     VZ.setTheme(false);
@@ -1506,12 +1536,14 @@ const VZ={ok:false,pk:1,tgt:1,yaw:0,pitch:0,idle:0,drag:false,of:0,ot:0,fT:0,tT:
     VZ.update=function(dt){
       VZ.pk+=clamp(VZ.tgt-VZ.pk,-dt/0.8,dt/0.8);
       if(VZ.tgt===0&&!VZ.drag){VZ.idle+=dt;if(VZ.idle>4){VZ.yaw=wrapPi(VZ.yaw);const f=Math.exp(-dt*3);VZ.yaw*=f;VZ.pitch*=f;}}   // drive: camera eases back behind the car a few seconds after you let go
+      {const want=(VZ.tgt===0&&car.vf<-0.5)?Math.PI:0;VZ.rvA+=clamp(want-VZ.rvA,-dt*3.2,dt*3.2);}   // v6.4: reversing swings the view round to the front of the car
       const pk=VZ.pk,e=pk*pk*(3-2*pk);
       const M=models[shownVeh];if(!M)return;
       // frunk / trunk lids swing open and shut
       {const st=dt/0.7;VZ.of+=clamp(VZ.fT-VZ.of,-st,st);VZ.ot+=clamp(VZ.tT-VZ.ot,-st,st);
        const fe=VZ.of*VZ.of*(3-2*VZ.of),te=VZ.ot*VZ.ot*(3-2*VZ.ot);
-       for(const k in models){const m=models[k];if(m.frunk)m.frunk.g.rotation.x=m.frunk.ang*fe;if(m.trunk)m.trunk.g.rotation.x=m.trunk.ang*te;}}
+       for(const k in models){const m=models[k];if(m.frunk)m.frunk.g.rotation.x=m.frunk.ang*fe;if(m.trunk)m.trunk.g.rotation.x=m.trunk.ang*te;}
+       for(const k in car.models){const m=car.models[k];if(m.frunk)m.frunk.g.rotation.x=m.frunk.ang*fe;if(m.trunk)m.trunk.g.rotation.x=m.trunk.ang*te;}}   // v6.4: the real car's frunk / trunk open too
       // wheels / steering / body attitude follow the game car
       const ws=car.wheelsSpin;for(let i=0;i<ws.length&&i<M.wheelsSpin.length;i++)M.wheelsSpin[i].rotation.x=ws[i].rotation.x;
       const fp=car.frontPivots;for(let i=0;i<fp.length&&i<M.frontPivots.length;i++)M.frontPivots[i].rotation.y=fp[i].rotation.y;
@@ -1522,16 +1554,16 @@ const VZ={ok:false,pk:1,tgt:1,yaw:0,pitch:0,idle:0,drag:false,of:0,ot:0,fT:0,tT:
       for(const R of ribbons)R.m.visible=showRoad;
       M_ROAD.opacity=M_LINE.opacity=M_RAIL.opacity=M_PATH.opacity=1-e;
       M_PATH.color.setHex(auto?VZ.pathBlue:VZ.pathGrey);
-      for(const o of obs)if(pk>0.3)o.visible=false;
       if(showRoad)updateRoad();
+      if(pk>0.3)hideObs();
       // camera
       const lenK=clamp(VC.cl/2.05,0.85,1.85);
       dPos.set(0,3.6*lenK+0.7,-(7.4*lenK+1.0));dTgt.set(0,0.5,6+3*lenK);
       {const r0=dPos.length(),a0=Math.atan2(dPos.x,dPos.z),e0=Math.atan2(dPos.y,Math.hypot(dPos.x,dPos.z)),
-        a1=a0-VZ.yaw,e1=clamp(e0+VZ.pitch,0.04,1.3);
+        a1=a0-VZ.yaw+VZ.rvA,e1=clamp(e0+VZ.pitch,0.04,1.3);
        dPos.set(r0*Math.cos(e1)*Math.sin(a1),r0*Math.sin(e1),r0*Math.cos(e1)*Math.cos(a1));   // orbit the drive camera around the car
-       dTgt.lerp(carPt,clamp(Math.hypot(VZ.yaw,VZ.pitch)*3,0,1));}                            // ...and look at the car once orbited
-      const az=0.65+VZ.yaw,el=clamp(0.2+VZ.pitch,0.1,0.45),Dd=7.4*lenK*1.4;
+       dTgt.lerp(carPt,clamp(Math.hypot(VZ.yaw,VZ.pitch)*3+VZ.rvA*1.5,0,1));}                            // ...and look at the car once orbited
+      const az=0.65-VZ.yaw,el=clamp(0.2+VZ.pitch,0.1,0.45),Dd=7.4*lenK*1.4;
       pPos.set(Dd*Math.sin(az)*Math.cos(el),Dd*Math.sin(el)+0.6,Dd*Math.cos(az)*Math.cos(el));pTgt.set(0,0.75,0);
       cam.position.copy(lerp3(dPos,pPos,e,tmpP));cam.lookAt(lerp3(dTgt,pTgt,e,tmpT));
       cam.fov=55+(28-55)*e;
@@ -1600,6 +1632,7 @@ const su=k=>Math.round(k*UF)+' '+UL;
 let toastT=0;
 function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),1800);}
 function setAuto(on,silent){
+  if(on&&!auto)AP.st=car.steer;
   auto=on;$('auto').checked=on;$('chipAuto').classList.toggle('on',on);$('maxBox').classList.toggle('dis',!on);
   if(!silent)toast(on?'Autopilot on':'Autopilot off');
 }
@@ -1748,7 +1781,6 @@ function playBelt(on){
 }
 $('boostChk').addEventListener('change',e=>setBoost(e.target.checked));
 $('hdChk').addEventListener('change',e=>setHeads(e.target.checked));
-$('lightBtn').onclick=()=>setHeads(!lightsEff);
 $('kbBtn').onclick=toggleKb;
 $('carBtn').onclick=toggleCar;
 
@@ -1824,20 +1856,47 @@ function resetCar(){
   car.gear=0;car.shiftT=0;car.lean=0;
   car.y=groundAt(car.x,car.z,car.idx).y;car.air=false;car.vy=0;car.pys=undefined;
 }
+/* v6.7 autopilot: pure pursuit on the right-lane centre line.
+   - steering is computed as a path curvature and converted to a wheel angle with the car's real steering model, so the
+     same gains work at 20 or 250 km/h (no weaving at speed, no lazy turn-in when slow)
+   - the speed profile looks ~250 m ahead and brakes early enough to take every bend inside the grip limit */
+const LANE_C=1.2;
+const AP={st:0};
+function apLanePt(u){            // point on the lane centre line at fractional point index u
+  const i=Math.floor(u),f=u-i,p=pts[i],q=pts[i+1],h=lerp(p.h,q.h,f);
+  return {x:lerp(p.x,q.x,f)-Math.cos(h)*LANE_C,z:lerp(p.z,q.z,f)+Math.sin(h)*LANE_C};
+}
 function autopilot(dt){
-  const v=Math.max(car.vf,0),look=6+v*0.7,j=car.idx+Math.max(2,Math.round(look/STEP));
-  ensurePoints(j+60);
-  const T=pts[j],tx=T.x+(-Math.cos(T.h))*1.2,tz=T.z+Math.sin(T.h)*1.2;
-  const gg=groundAt(car.x,car.z,car.idx),xte=gg.d-1.2;   // v3.2: cross-track correction keeps it in lane through curves
-  const err=wrapPi(Math.atan2(tx-car.x,tz-car.z)-car.h)+clamp(0.06*xte,-0.3,0.3);
-  const u=(2.4*err-0.6*car.yawRate)*(VC.wb/2.6);
-  let maxK=0;for(let m=0;m<45;m++){const k=Math.abs(pts[car.idx+m].k);if(k>maxK)maxK=k;}
-  let vT=Math.min(maxOn?maxKmh/3.6:250/3.6,Math.sqrt(0.82*VC.lat*(car.gripMul||1)/(maxK+1e-4)));
+  const v=Math.max(car.vf,0);
+  ensurePoints(car.idx+80);
+  const gg=groundAt(car.x,car.z,car.idx),xte=gg.d-LANE_C;
+  // --- steering: pure pursuit towards the lane centre, a little ahead
+  const Ld=clamp(4.5+0.55*v,5.5,32),T=apLanePt(gg.i+gg.t+Ld/STEP);
+  const dx=T.x-car.x,dz=T.z-car.z,dist=Math.max(Math.hypot(dx,dz),1);
+  const alpha=clamp(wrapPi(Math.atan2(dx,dz)-car.h),-1.3,1.3);
+  const kappa=2*Math.sin(alpha)/dist;                                  // curvature (+ = heading increases)
+  const ms=VC.steerMax*(tune.steer/100)/(1+car.vf*car.vf*VC.sd);        // same formula the car uses
+  let cmd=-Math.atan(kappa*VC.wb)/ms;
+  cmd=clamp(cmd,-1,1);
+  AP.st+=(cmd-AP.st)*(1-Math.exp(-dt*12));                              // soften tiny jitters
+  // --- speed: never carry more speed into a bend than the grip allows; brake early
+  const aLat=0.72*VC.lat*(car.gripMul||1),aBrk=0.28*VC.brake*(tune.brake/100)*(1-0.3*wetFactor());
+  let vT=maxOn?maxKmh/3.6:250/3.6;
+  for(let m=0;m<75;m++){
+    const k=pts[car.idx+m].k,kl=Math.abs(k/(1+LANE_C*k)),dd=Math.max(m*STEP-4,0);
+    const vk=Math.sqrt(aLat/(kl+1e-4)),vm=Math.sqrt(vk*vk+2*aBrk*dd);   // fast enough that braking at aBrk still makes it
+    if(vm<vT)vT=vm;
+    // crests: stay below the speed at which the road would fall away faster than gravity (the car would take off and drift)
+    if(m>0){const cv=(pts[car.idx+m+1].y-2*pts[car.idx+m].y+pts[car.idx+m-1].y)/(STEP*STEP);
+      if(cv<-0.0015){const vc=Math.sqrt(0.5*GRAV/-cv),vcm=Math.sqrt(vc*vc+2*aBrk*dd);if(vcm<vT)vT=vcm;}}
+  }
+  if(Math.abs(xte)>1.0)vT=Math.min(vT,Math.max(8,v*0.9));               // far from the lane: ease off while recovering
   if(cruiseOn)vT=Math.min(vT,cruiseSet/3.6);
   let thr=0,brk=0;
   if(cruiseOn){const c=cruiseCtl(v,vT,dt);thr=c.thr;brk=c.brk;}
-  else{if(v<vT-0.4)thr=clamp((vT-v)*0.6,0,1);else if(v>vT+1.5)brk=clamp((v-vT)*0.15,0,0.7);}
-  return {thr:thr,brk:brk,st:clamp(-u,-1,1)};
+  else{if(v<vT-0.4)thr=clamp((vT-v)*0.6,0,1);else if(v>vT+0.8)brk=clamp((v-vT)*0.22,0,0.9);}
+  if(cruiseOn&&v>vT+0.8)brk=Math.max(brk,clamp((v-vT)*0.22,0,0.9));
+  return {thr:thr,brk:brk,st:AP.st};
 }
 /* gas: gear from speed (with hysteresis) and a torque curve that favours low gears */
 function gearForSpeed(v){const gm=PW.gears;let g=0;while(g<gm.length-1&&v>gm[g])g++;return g;}
@@ -2425,50 +2484,10 @@ function fitTesla(){
 window.addEventListener('resize',fitTesla);
 
 /* ---------------- procedural map tiles (neighbourhood streets, parks, water) ---------------- */
-const TILE_PX=1024,TILE_M=6400,MCOL={
-  light:{land:{hills:'#e6e8e4',desert:'#ece7de',snow:'#eff2f6'},park:'#d5e6cd',water:'#cde0ee',street:'#fafafb',streetEdge:'rgba(0,0,0,.05)',hwy:'#ffffff',hwyEdge:'#c9cacf',txt:'#6a6d74',halo:'rgba(255,255,255,.85)',route:'#3e6ae1',routeEdge:'#ffffff',roadFill:'#ffffff',roadEdge:'#c3c5cb',shield:'#ffffff',shieldTx:'#2a2d33'},
-  dark:{land:{hills:'#26292a',desert:'#2b2927',snow:'#292d32'},park:'#2a3a2f',water:'#223242',street:'#3a3c42',streetEdge:'rgba(0,0,0,.25)',hwy:'#4d5058',hwyEdge:'#17181b',txt:'#a6a9b1',halo:'rgba(20,21,24,.85)',route:'#4f7dff',routeEdge:'#14151a',roadFill:'#50535b',roadEdge:'#17181b',shield:'#2d2f35',shieldTx:'#eceef2'}};
-const MP={cy:198,S:0.17,tiles:[null,null],labels:null,dark:false,frame:0,px:0,py:0,drag:false,idle:0,lx:0,ly:0};
-const PLACES=[['Willow Park','park'],['Cedar Ridge School','school'],['Fairview Market','shop'],['Lakeside Park','park'],['Oak Hollow Library','school'],['Summit Café','shop'],['Maple Grove','park'],['Quarry Park','park'],['Pine Valley High','school'],['Sunset Diner','shop'],['Riverbend Trail','park'],['Harbor Inn','shop'],['Birch Elementary','school'],['Stonegate Market','shop']];
-function mapRand(seed){return mulberry32((WORLD_SEED^seed)>>>0);}
-function mkLabels(){
-  const r=mapRand(0x1234abcd),L=[];
-  for(let i=0;i<14;i++){const p=PLACES[i%PLACES.length];L.push({x:r()*TILE_PX,y:r()*TILE_PX,n:p[0],k:p[1]});}
-  return L;
-}
-function mkTile(dark){
-  const C=MCOL[dark?'dark':'light'],c=document.createElement('canvas');c.width=c.height=TILE_PX;
-  const g=c.getContext('2d'),r=mapRand(0x77aa11),T=TILE_PX;
-  const wrap=f=>{for(let ox=-1;ox<=1;ox++)for(let oy=-1;oy<=1;oy++)f(ox*T,oy*T);};
-  g.lineCap='round';g.lineJoin='round';
-  const blob=(cx,cy,rad,fill)=>{
-    const n=12,P=[];for(let i=0;i<n;i++){const a=i/n*Math.PI*2,k=rad*(0.7+r()*0.6);P.push([cx+Math.cos(a)*k,cy+Math.sin(a)*k*0.8]);}
-    g.fillStyle=fill;
-    wrap((dx,dy)=>{g.beginPath();for(let i=0;i<n;i++){const a=P[i],b=P[(i+1)%n],mx=(a[0]+b[0])/2+dx,my=(a[1]+b[1])/2+dy;if(!i)g.moveTo(mx,my);else g.quadraticCurveTo(a[0]+dx,a[1]+dy,mx,my);}g.closePath();g.fill();});
-  };
-  for(let i=0;i<3;i++)blob(r()*T,r()*T,40+r()*60,C.water);
-  for(let i=0;i<11;i++)blob(r()*T,r()*T,22+r()*38,C.park);
-  // grid-like neighbourhoods
-  g.strokeStyle=C.street;g.lineWidth=1.4;
-  for(let i=0;i<14;i++){
-    const cx=r()*T,cy=r()*T,w=90+r()*120,h=70+r()*100,a=r()*Math.PI,sp=11+r()*7;
-    wrap((dx,dy)=>{g.save();g.translate(cx+dx,cy+dy);g.rotate(a);g.beginPath();g.rect(-w/2,-h/2,w,h);g.clip();g.beginPath();
-      for(let x=-w/2;x<=w/2;x+=sp){g.moveTo(x,-h/2);g.lineTo(x,h/2);}for(let y=-h/2;y<=h/2;y+=sp*1.2){g.moveTo(-w/2,y);g.lineTo(w/2,y);}g.stroke();g.restore();});
-  }
-  // winding streets
-  const walk=(n,seg,turn,lw,col,edge)=>{
-    let x=r()*T,y=r()*T,a=r()*6.28;const P=[[x,y]];
-    for(let i=0;i<n;i++){a+=(r()-.5)*turn;x+=Math.cos(a)*seg*(0.6+r()*.8);y+=Math.sin(a)*seg*(0.6+r()*.8);P.push([x,y]);}
-    const draw=(w,s)=>{g.strokeStyle=s;g.lineWidth=w;wrap((dx,dy)=>{g.beginPath();g.moveTo(P[0][0]+dx,P[0][1]+dy);for(let i=1;i<P.length;i++)g.lineTo(P[i][0]+dx,P[i][1]+dy);g.stroke();});};
-    if(edge)draw(lw+2.2,edge);draw(lw,col);
-  };
-  for(let i=0;i<150;i++)walk(5+Math.floor(r()*7),22,1.3,1.3,C.street,null);
-  for(let i=0;i<9;i++)walk(28,34,0.35,2,C.street,C.streetEdge);
-  for(let i=0;i<5;i++)walk(40,30,0.22,3.2,C.hwy,C.hwyEdge);
-  return c;
-}
-function mapTile(){const d=VZ.dark?1:0;return MP.tiles[d]||(MP.tiles[d]=mkTile(!!d));}
-
+const MCOL={
+  light:{laneMark:'#c9ccd3',obs:{hills:'#b9d2ae',desert:'#d8c3a2',snow:'#c9d6e3'},land:{hills:'#e6e8e4',desert:'#ece7de',snow:'#eff2f6'},park:'#d5e6cd',water:'#cde0ee',street:'#fafafb',streetEdge:'rgba(0,0,0,.05)',hwy:'#ffffff',hwyEdge:'#c9cacf',txt:'#6a6d74',halo:'rgba(255,255,255,.85)',route:'#3e6ae1',routeEdge:'#ffffff',roadFill:'#ffffff',roadEdge:'#c3c5cb',shield:'#ffffff',shieldTx:'#2a2d33'},
+  dark:{laneMark:'#7c808a',obs:{hills:'#34493a',desert:'#4a4338',snow:'#3d4650'},land:{hills:'#26292a',desert:'#2b2927',snow:'#292d32'},park:'#2a3a2f',water:'#223242',street:'#3a3c42',streetEdge:'rgba(0,0,0,.25)',hwy:'#4d5058',hwyEdge:'#17181b',txt:'#a6a9b1',halo:'rgba(20,21,24,.85)',route:'#4f7dff',routeEdge:'#14151a',roadFill:'#50535b',roadEdge:'#17181b',shield:'#2d2f35',shieldTx:'#eceef2'}};
+const MP={cy:198,S:0.17,dark:false,frame:0,px:0,py:0,drag:false,idle:0,lx:0,ly:0};
 /* ---------------- map drawing ---------------- */
 const mctx=$('mapCv').getContext('2d');
 /* drag the map to look around (park + drive); double-click re-centres */
@@ -2497,23 +2516,18 @@ function drawMap(dt){
   const Sk=MP.S*k,cx=(230+MP.px)*k,cy=(MP.cy+MP.py)*k,ch=Math.cos(car.h),sh=Math.sin(car.h);
   c.setTransform(1,0,0,1,0,0);
   c.fillStyle=C.land[biome.id]||C.land.hills;c.fillRect(0,0,W,H);
-  // tiles (world-aligned, rotated so the car always points up)
-  const a=-Sk*ch,b=-Sk*sh,cc=Sk*sh,d=-Sk*ch,e=cx-(a*car.x+cc*car.z),f=cy-(b*car.x+d*car.z);
-  const tile=mapTile(),ti=Math.floor(car.x/TILE_M),tj=Math.floor(car.z/TILE_M);
-  c.setTransform(a,b,cc,d,e,f);
-  for(let i=ti-1;i<=ti+1;i++)for(let j=tj-1;j<=tj+1;j++)c.drawImage(tile,i*TILE_M,j*TILE_M,TILE_M,TILE_M);
-  c.setTransform(1,0,0,1,0,0);
   const px=(x,z)=>{const dx=x-car.x,dz=z-car.z;return [cx-(dx*ch-dz*sh)*Sk,cy-(dx*sh+dz*ch)*Sk];};
-  // labels (kept upright)
-  if(!MP.labels)MP.labels=mkLabels();
-  c.font='600 '+(9.5*k).toFixed(1)+'px Montserrat,"Segoe UI",sans-serif';c.textBaseline='middle';
-  const kc={park:'#4fae6a',school:'#8c93a0',shop:'#3b94dd'},m=TILE_M/TILE_PX;
-  for(let i=ti-1;i<=ti+1;i++)for(let j=tj-1;j<=tj+1;j++)for(const L of MP.labels){
-    const p=px(i*TILE_M+L.x*m,j*TILE_M+L.y*m);
-    if(p[0]<-60*k||p[0]>W+10*k||p[1]<0||p[1]>H-64*k)continue;
-    c.fillStyle=kc[L.k];c.beginPath();c.arc(p[0],p[1],5.5*k,0,6.283);c.fill();
-    c.fillStyle='#fff';c.beginPath();c.arc(p[0],p[1],1.9*k,0,6.283);c.fill();
-    c.lineWidth=3*k;c.strokeStyle=C.halo;c.strokeText(L.n,p[0]+9*k,p[1]);c.fillStyle=C.txt;c.fillText(L.n,p[0]+9*k,p[1]);
+  // real scenery: the trees, rocks and cacti that actually stand beside the road in the 3D world
+  {
+    const cci=Math.floor(car.idx/N),oc=MCOL[VZ.dark?'dark':'light'].obs[biome.id]||'#8c93a0';
+    const rr=(H-cy)/Sk+80;
+    for(let q=cci-Math.ceil(rr/(STEP*N))-1;q<=cci+Math.ceil(cy/Sk/(STEP*N))+2;q++){
+      const chk=chunks.get(q);if(!chk)continue;
+      for(const o of chk.obs){
+        const p=px(o.x,o.z);if(p[0]<-6*k||p[0]>W+6*k||p[1]<-6*k||p[1]>H-60*k)continue;
+        c.fillStyle=oc;c.beginPath();c.arc(p[0],p[1],Math.max(1.3*k,o.r*Sk*1.3),0,6.283);c.fill();
+      }
+    }
   }
   // route = the road itself
   const ahead=Math.min(900,Math.max(0,Math.ceil(cy/Sk/STEP))+14),backM=clamp((H-cy)/Sk+60,60,3500),i0=Math.max(0,car.idx-Math.ceil(backM/STEP)),i1=car.idx+ahead;
@@ -2529,15 +2543,9 @@ function drawMap(dt){
   };
   c.lineCap='round';c.lineJoin='round';
   path(0,9*k,C.roadEdge,false);path(0,6.4*k,C.roadFill,false);
+  // real lane markings: the dashed centre line follows the actual road
+  c.setLineDash([5*k,6*k]);c.lineCap='butt';path(0,1.1*k,C.laneMark,false);c.setLineDash([]);c.lineCap='round';
   path(ci,8.2*k,C.routeEdge,true);path(ci,5.4*k,C.route,true);
-  // shields
-  c.font='700 '+(8*k).toFixed(1)+'px Montserrat,"Segoe UI",sans-serif';c.textAlign='center';
-  for(let n=Math.ceil(i0/160)*160;n<=i1;n+=160){
-    if(Math.abs(n-car.idx)<28)continue;const p=px(pts[n].x,pts[n].z);if(p[1]<12*k||p[1]>H-70*k)continue;
-    c.fillStyle=C.shield;c.strokeStyle=C.roadEdge;c.lineWidth=1.2*k;c.beginPath();c.roundRect?c.roundRect(p[0]-13*k,p[1]-8*k,26*k,16*k,5*k):c.rect(p[0]-13*k,p[1]-8*k,26*k,16*k);c.fill();c.stroke();
-    c.fillStyle=C.shieldTx;c.fillText('SR 1',p[0],p[1]+0.5*k);
-  }
-  c.textAlign='start';
   // car arrow
   c.fillStyle='#e82127';c.strokeStyle='#fff';c.lineWidth=2.2*k;c.beginPath();
   c.moveTo(cx,cy-12*k);c.lineTo(cx+8.5*k,cy+9*k);c.lineTo(cx,cy+4.5*k);c.lineTo(cx-8.5*k,cy+9*k);c.closePath();c.stroke();c.fill();
@@ -2576,14 +2584,14 @@ const ACT={
   frunk:()=>{VZ.fT=VZ.fT?0:1;lidLabels();},trunk:()=>{VZ.tT=VZ.tT?0:1;lidLabels();},
   mute:()=>{const m=$('mute');m.checked=!m.checked;applyVol();toast(m.checked?'Muted':'Sound on');hudForce=true;},
   volup:()=>stepVol(0.1),voldn:()=>stepVol(-0.1),next:()=>stepBiome(1),prev:()=>stepBiome(-1),
-  boost:()=>setBoost(!boostOn),queue:()=>toggleKb(),eq:()=>toggleTune(),lights:()=>setHeads(!lightsEff),autolights:()=>setAutoLights(!autoLights),highbeam:()=>setHighBeam(!highBeam),belt:()=>setBelt(!beltOn),
+  boost:()=>setBoost(!boostOn),queue:()=>toggleKb(),eq:()=>toggleTune(),lights:()=>setHeads(!lightsEff),lightmenu:()=>$('lightPop').classList.toggle('show'),autolights:()=>setAutoLights(!autoLights),highbeam:()=>setHighBeam(!highBeam),belt:()=>setBelt(!beltOn),
   vol:()=>$('volPop').classList.toggle('show'),
   clim:el=>{const s=el.dataset.s,d=+el.dataset.d;clim[s]=clamp(clim[s]+d*(UF===1?0.5:5/9),16,28);hudForce=true;}
 };
 $('tesla').addEventListener('click',e=>{
   const el=e.target.closest('[data-act]');
-  if(!el){if(!e.target.closest('#volPop'))$('volPop').classList.remove('show');return;}
-  const f=ACT[el.dataset.act];if(f){if(el.dataset.act!=='vol')$('volPop').classList.remove('show');f(el);}
+  if(!el){if(!e.target.closest('#volPop'))$('volPop').classList.remove('show');if(!e.target.closest('#lightPop'))$('lightPop').classList.remove('show');return;}
+  const f=ACT[el.dataset.act];if(f){if(el.dataset.act!=='vol')$('volPop').classList.remove('show');if(el.dataset.act!=='lightmenu'&&!el.closest('#lightPop'))$('lightPop').classList.remove('show');f(el);}
 });
 $('volRange').addEventListener('input',e=>{$('vol').value=e.target.value;if(+e.target.value>0&&$('mute').checked)$('mute').checked=false;applyVol();});
 
@@ -2594,6 +2602,7 @@ function setMode(m){
   VZ.tgt=m==='park'?1:0;
   if(m==='drive'){VZ.idle=99;MP.idle=99;VZ.fT=VZ.tT=0;lidLabels();}   // pulling away shuts the frunk / trunk   // leaving park: any dragged view eases back to normal right away
 }
+let apRot='';const apIcons=[$('tsApI').firstElementChild,$('navAp').firstElementChild];
 function updateHUD(dt){
   if(dashDirty){buildTach();dashDirty=false;dRpm=PW.isEV?0:0.11;hudForce=true;}
   const v=Math.abs(car.vf),kmh=v*3.6;
@@ -2628,6 +2637,10 @@ function updateHUD(dt){
       put('lblFrunk',f,0,0);put('lblTrunk',t,0,0);put('lblLock',r,0,-8);put('bolt',c,6,-10);
     }
   }
+  {  // v6.7: the autopilot icon turns exactly like the steering wheel
+    const MWi=car.models&&car.models[shownVeh],deg=auto?car.steer*((MWi&&MWi.lock)||2.1)*57.2958:0,txt=Math.abs(deg)<0.05?'':'rotate('+deg.toFixed(1)+'deg)';
+    if(txt!==apRot){apRot=txt;for(const el of apIcons)el.style.transform=txt;}
+  }
   hudT+=dt;if(hudT<0.05&&!hudForce)return;hudT=0;hudForce=false;
   // ---- text / state at 20 Hz ----
   $('spd').textContent=Math.round(kmh*UF);$('unit').textContent=useMph?'MPH':'KM/H';
@@ -2650,7 +2663,7 @@ function updateHUD(dt){
   $('thrF').style.width=(dThr*100).toFixed(0)+'%';
   $('vig').style.opacity=(0.3+Math.min(kmh/180,1)*0.5).toFixed(2);
   $('lsLow').classList.toggle('on',lightsEff);$('lsAuto').classList.toggle('on',autoLights);$('lsHigh').classList.toggle('on',highBeam&&lightsEff);
-  $('lsBelt').classList.toggle('on',beltOn);$('lightBtn').classList.toggle('on',lightsEff);
+  $('lsBelt').classList.toggle('on',beltOn);$('beltDr').classList.toggle('on',beltOn);$('lpLow').classList.toggle('on',lightsEff);$('lpAuto').classList.toggle('on',autoLights);$('lpHigh').classList.toggle('on',highBeam&&lightsEff);$('lightBtn').classList.toggle('on',lightsEff);
   // battery / fuel
   $('batPct').textContent=Math.round(energy)+'%';$('batFill').setAttribute('width',(19.4*energy/100).toFixed(1));
   $('batFill').setAttribute('fill',energy<15?'#e82127':'currentColor');
